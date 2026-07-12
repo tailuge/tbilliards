@@ -1,0 +1,39 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Billiards",
+  "version": "0.1.0",
+  "identifier": "com.tailuge.billiards",
+  "build": {
+    "frontendDist": "https://billiards.tailuge.workers.dev/lobby",
+    "devUrl": "https://billiards.tailuge.workers.dev/lobby"
+  },
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "Billiards",
+        "width": 1024,
+        "height": 768,
+        "resizable": true,
+        "fullscreen": false
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "android": {
+      "debugApplicationIdSuffix": ".debug"
+    }
+  }
+}
