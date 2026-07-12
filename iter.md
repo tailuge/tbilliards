@@ -23,18 +23,6 @@ In `src-tauri/capabilities/default.json`, a `remote` configuration is defined:
 * **Action**:
   Simply remove the `"remote"` property from `src-tauri/capabilities/default.json`. Standard remote page navigation and WebGL will still work perfectly inside the webview without it.
 
-### 🔒 Recommendation: Explicit Content Security Policy (CSP)
-Currently, `"csp": null` is set under `app.security` in `tauri.conf.json`.
-* **Analysis**: Unset CSP fallback to open webview defaults, which allows the remote webview to load scripts, styles, or iframes from any origin.
-* **Best Practice**: Restrict loaded resources only to trusted origins (the game workers domain, CDN, and local WebGL resources).
-* **Action**:
-  Update `tauri.conf.json` with a secure, game-compatible CSP:
-  ```json
-  "security": {
-    "csp": "default-src 'self' https://billiards.tailuge.workers.dev; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://billiards.tailuge.workers.dev; style-src 'self' 'unsafe-inline' https://billiards.tailuge.workers.dev; img-src 'self' data: https://billiards.tailuge.workers.dev; connect-src 'self' https://billiards.tailuge.workers.dev"
-  }
-  ```
-
 ---
 
 ## 2. Rust Build & Binary Size Optimization
@@ -54,26 +42,6 @@ strip = true          # Strip symbols and debug info automatically
 ```
 * **Impact**: Can reduce the output binary size by **50% to 70%** (saving tens of megabytes on Linux, Windows, and macOS) and improve load-up times.
 
----
-
-## 3. CI/CD Pipeline (`build.yml`) Improvements
-
-### 🚀 Recommendation: Use `cargo-binstall` to Avoid Compiling `tauri-cli`
-Currently, the GitHub Actions runner installs the Tauri CLI via:
-```yaml
-- name: Install Tauri CLI
-  run: cargo install tauri-cli --version "^2"
-```
-* **Analysis**: `cargo install` downloads and compiles `tauri-cli` and all its dependencies from source on every single run across all matrix OS platforms. This typically wastes **3 to 6 minutes** of CI time per runner!
-* **Best Practice**: Use `cargo-binstall` to download pre-compiled Tauri CLI binaries, which takes only 5–10 seconds.
-* **Action**:
-  Update that step in `.github/workflows/build.yml` to:
-  ```yaml
-  - name: Install Tauri CLI
-    run: |
-      curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
-      cargo binstall -y tauri-cli@2
-  ```
 
 ---
 
@@ -147,7 +115,5 @@ If a user resizes or moves the window, they expect it to open in the same positi
 | Item | Recommendation | Priority | Complexity |
 |---|---|---|---|
 | **Security** | Omit `"remote"` block from default capabilities | **High** | Very Low |
-| **Security** | Set secure, strict Content Security Policy (CSP) | **Medium** | Low |
 | **Rust** | Configure size-optimized release profiles in `Cargo.toml` | **High** | Very Low |
-| **CI/CD** | Use `cargo-binstall` in GitHub Actions build | **High** | Low |
-| **UX** | Evaluate inline JS to prevent right-click menus & refreshes | **Medium** | Low |
+

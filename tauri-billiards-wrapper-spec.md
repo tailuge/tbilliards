@@ -268,25 +268,31 @@ Output binaries will be in `src-tauri/target/release/`.
 
 ---
 
-## Phase 2: CI — Linux + Windows Builds — 📋 SPEC'D (not yet implemented)
+## Phase 2: CI — Linux + Windows + macOS Builds — ✅ COMPLETE
 
 ### In scope
 - GitHub Actions workflow that builds the Tauri app on **Linux, Windows, and macOS**
 - Upload build artifacts (installers + binaries) as workflow artifacts — no GitHub Release created
 - Manual dispatch (`workflow_dispatch`) and tag push (`v*`) triggers only — no branch push or PR checks
-- Plain cargo commands (no `tauri-apps/tauri-action`, no Node.js dependency in CI)
+- Plain cargo commands via `dtolnay/install` (no `tauri-apps/tauri-action`, no Node.js dependency in CI)
+- On tag pushes: create a **GitHub Release** and attach installer files
+- On manual dispatch: upload artifacts to workflow run only (no release)
 
 ### Out of scope
-- GitHub Releases (deferred — artifacts only for now)
 - Branch push / PR CI checks
 - Auto updater
-- Code signing (macOS builds will be unsigned — fine for personal use, not for distribution)
+- Code signing (all builds are unsigned — fine for personal use, not for distribution)
 
 ### CI Approach: Plain Cargo Commands
 
 Since this is a **cargo-only project** (no `package.json`, no Node.js frontend), we use plain `cargo tauri build` commands instead of `tauri-apps/tauri-action`. This avoids needing Node.js, npm, or workarounds like `tauriScript`.
 
-**Rationale:** `tauri-apps/tauri-action` is designed for projects with a Node frontend and expects npm/yarn/pnpm. For a cargo-only remote-URL wrapper, plain cargo commands are simpler and more reliable. Artifacts are uploaded via `actions/upload-artifact@v4`.
+**Rationale:** `tauri-apps/tauri-action` is designed for projects with a Node frontend and expects npm/yarn/pnpm. For a cargo-only remote-URL wrapper, plain cargo commands are simpler and more reliable.
+
+**Key optimizations:**
+- Tauri CLI is installed via `dtolnay/install` action (downloads pre-compiled binary in seconds) instead of `cargo install` (compiles from source in 3-6 minutes)
+- `actions/upload-artifact@v7` for CI artifact storage
+- `softprops/action-gh-release@v3` for creating GitHub Releases on tag pushes
 
 ### Workflow Design
 
@@ -303,13 +309,14 @@ Since this is a **cargo-only project** (no `package.json`, no Node.js frontend),
 
 **Steps per platform:**
 
-1. **Checkout** — `actions/checkout@v4`
+1. **Checkout** — `actions/checkout@v7`
 2. **Install Rust** — `dtolnay/rust-toolchain@stable`
 3. **Rust cache** — `swatinem/rust-cache@v2` (keyed to `src-tauri`)
-4. **Install Tauri CLI** — `cargo install tauri-cli --version "^2"`
+4. **Install Tauri CLI** — `dtolnay/install@master` (pre-compiled binary, ~5 seconds vs 3-6 min)
 5. **Install system deps (Linux only)** — `apt-get install` webkit2gtk-4.1, gtk-3, etc. (Windows and macOS have webview pre-installed)
 6. **Build** — `cargo tauri build`
-7. **Upload artifacts** — `actions/upload-artifact@v4` with platform-specific names
+7. **Upload artifacts** — `actions/upload-artifact@v7` (always — for both manual and tag triggers)
+8. **Create GitHub Release** — `softprops/action-gh-release@v3` (only on tag pushes)
 
 ### Linux-specific details
 
@@ -350,8 +357,8 @@ sudo apt-get install -y \
 
 ### Permissions
 
-- `contents: read` — sufficient for artifact upload only
-- If GitHub Releases are added later, change to `contents: write`
+- `contents: write` — required for GitHub Releases API
+- Also covers artifact upload
 
 ### Implementation
 
@@ -373,7 +380,7 @@ on:
 jobs:
   build:
     permissions:
-      contents: read
+      contents: write
     strategy:
       fail-fast: false
       matrix:
@@ -388,7 +395,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Install Rust stable
         uses: dtolnay/rust-toolchain@stable
@@ -399,7 +406,10 @@ jobs:
           workspaces: 'src-tauri -> target'
 
       - name: Install Tauri CLI
-        run: cargo install tauri-cli --version "^2"
+        uses: dtolnay/install@master
+        with:
+          package: tauri-cli
+          version: "2"
 
       - name: Install system dependencies (Linux only)
         if: matrix.platform == 'ubuntu-22.04'
@@ -418,22 +428,32 @@ jobs:
       - name: Build Tauri app
         run: cargo tauri build
 
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v4
+      - name: Upload workflow artifacts
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ matrix.artifact-name }}
           path: src-tauri/target/release/bundle/
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v3
+        if: github.ref_type == 'tag'
+        with:
+          files: |
+            src-tauri/target/release/bundle/**
+          generate_release_notes: true
+          make_latest: true
 ```
 
 ### Testing plan (Phase 2)
 
 1. Push the workflow file to the repo
 2. Trigger via **Actions tab → Run workflow** (manual dispatch)
-3. Verify both Linux and Windows jobs complete successfully
-4. Download both artifacts from the workflow run
+3. Verify all three platform jobs complete successfully
+4. Download artifacts from the workflow run
 5. Verify Linux artifact contains `.deb` / `.AppImage`
 6. Verify Windows artifact contains `.msi` / `.exe`
 7. Verify macOS artifact contains `.dmg` / `.app`
+8. Push a tag (`git tag v0.1.0 && git push origin v0.1.0`) to test the Release creation
 
 ---
 
@@ -442,4 +462,4 @@ jobs:
 - **Phase 3**: Bundle local game assets instead of remote URL (swap `frontendDist` to `../dist`)
 - **Phase 4**: Custom app icons, installer branding
 - **Phase 5**: Offline error/retry page, navigation interception
-- **Phase 6**: GitHub Releases on tag push (add `contents: write`, attach installers to release)
+- **Phase 6**: macOS code signing + notarization (for distributing macOS apps outside your machine)

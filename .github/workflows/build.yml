@@ -9,7 +9,7 @@ on:
 jobs:
   build:
     permissions:
-      contents: read
+      contents: write
     strategy:
       fail-fast: false
       matrix:
@@ -24,7 +24,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Install Rust stable
         uses: dtolnay/rust-toolchain@stable
@@ -35,7 +35,10 @@ jobs:
           workspaces: 'src-tauri -> target'
 
       - name: Install Tauri CLI
-        run: cargo install tauri-cli --version "^2"
+        uses: dtolnay/install@master
+        with:
+          package: tauri-cli
+          version: "2"
 
       - name: Install system dependencies (Linux only)
         if: matrix.platform == 'ubuntu-22.04'
@@ -54,8 +57,17 @@ jobs:
       - name: Build Tauri app
         run: cargo tauri build
 
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v4
+      - name: Upload workflow artifacts
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ matrix.artifact-name }}
           path: src-tauri/target/release/bundle/
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v3
+        if: github.ref_type == 'tag'
+        with:
+          files: |
+            src-tauri/target/release/bundle/**
+          generate_release_notes: true
+          make_latest: true
