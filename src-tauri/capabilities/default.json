@@ -9,6 +9,7 @@
     "urls": ["https://billiards.tailuge.workers.dev"]
   },
   "permissions": [
-    "core:default"
+    "core:default",
+    "window-state:default"
   ]
 }
