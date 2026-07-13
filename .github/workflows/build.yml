@@ -35,10 +35,9 @@ jobs:
           workspaces: 'src-tauri -> target'
 
       - name: Install Tauri CLI
-        uses: dtolnay/install@master
+        uses: taiki-e/install-action@v2
         with:
-          package: tauri-cli
-          version: "2"
+          tool: tauri-cli@2
 
       - name: Install system dependencies (Linux only)
         if: matrix.platform == 'ubuntu-22.04'
