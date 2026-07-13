@@ -5,9 +5,6 @@
   "windows": [
     "main"
   ],
-  "remote": {
-    "urls": ["https://billiards.tailuge.workers.dev"]
-  },
   "permissions": [
     "core:default",
     "window-state:default"

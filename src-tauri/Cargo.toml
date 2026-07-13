@@ -20,3 +20,10 @@ tauri-build = { version = "2.6.3", features = [] }
 [dependencies]
 tauri = { version = "2.11.3", features = [] }
 tauri-plugin-window-state = "2"
+
+[profile.release]
+opt-level = "z"       # Optimize for binary size
+lto = true            # Enable Link-Time Optimization
+codegen-units = 1     # Reduce parallel codegen units to maximize LTO optimization
+panic = "abort"       # Remove panic unwinding overhead
+strip = true          # Strip symbols and debug info automatically
