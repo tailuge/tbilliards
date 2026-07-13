@@ -35,8 +35,25 @@
       "icons/icon.ico",
       "icons/icon.png"
     ],
-    "android": {
-      "debugApplicationIdSuffix": ".debug"
+    "linux": {
+      "deb": {
+        "desktopTemplate": "templates/billiards.desktop",
+        "files": {
+          "icons/32x32.png": "/usr/share/icons/hicolor/32x32/apps/com.tailuge.billiards.png",
+          "icons/128x128.png": "/usr/share/icons/hicolor/128x128/apps/com.tailuge.billiards.png",
+          "icons/128x128@2x.png": "/usr/share/icons/hicolor/256x256/apps/com.tailuge.billiards.png",
+          "icons/icon.png": "/usr/share/icons/hicolor/512x512/apps/com.tailuge.billiards.png"
+        }
+      },
+      "rpm": {
+        "desktopTemplate": "templates/billiards.desktop",
+        "files": {
+          "icons/32x32.png": "/usr/share/icons/hicolor/32x32/apps/com.tailuge.billiards.png",
+          "icons/128x128.png": "/usr/share/icons/hicolor/128x128/apps/com.tailuge.billiards.png",
+          "icons/128x128@2x.png": "/usr/share/icons/hicolor/256x256/apps/com.tailuge.billiards.png",
+          "icons/icon.png": "/usr/share/icons/hicolor/512x512/apps/com.tailuge.billiards.png"
+        }
+      }
     }
   }
 }
