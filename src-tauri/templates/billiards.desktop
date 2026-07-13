@@ -1,0 +1,11 @@
+[Desktop Entry]
+Categories={{{categories}}}
+{{#if comment}}
+Comment={{{comment}}}
+{{/if}}
+Exec={{{exec}}}
+Icon=com.tailuge.billiards
+Name={{{name}}}
+Terminal=false
+Type=Application
+StartupWMClass=com.tailuge.billiards
