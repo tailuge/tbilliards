@@ -54,20 +54,19 @@ jobs:
             build-essential \
             pkg-config
 
-      - name: Build Tauri app
-        run: cargo tauri build
+      - name: Build and release Tauri app
+        uses: tauri-apps/tauri-action@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tauriScript: cargo tauri
+          tagName: ${{ github.ref_type == 'tag' && 'v__VERSION__' || '' }}
+          releaseName: ${{ github.ref_type == 'tag' && 'v__VERSION__' || '' }}
+          releaseDraft: true
+          prerelease: false
 
       - name: Upload workflow artifacts
         uses: actions/upload-artifact@v7
         with:
           name: ${{ matrix.artifact-name }}
           path: src-tauri/target/release/bundle/
-
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v3
-        if: github.ref_type == 'tag'
-        with:
-          files: |
-            src-tauri/target/release/bundle/**
-          generate_release_notes: true
-          make_latest: true
