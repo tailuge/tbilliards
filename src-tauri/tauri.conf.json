@@ -8,6 +8,7 @@
     "devUrl": "https://billiards.tailuge.workers.dev/lobby"
   },
   "app": {
+    "enableGTKAppId": true,
     "windows": [
       {
         "label": "main",
@@ -31,7 +32,8 @@
       "icons/128x128.png",
       "icons/128x128@2x.png",
       "icons/icon.icns",
-      "icons/icon.ico"
+      "icons/icon.ico",
+      "icons/icon.png"
     ],
     "android": {
       "debugApplicationIdSuffix": ".debug"
