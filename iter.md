@@ -1,11 +1,5 @@
 # Tauri Desktop Wrapper Review & Suggestions
 
-This review evaluates the Tauri Billiards Wrapper repository against best practices for Rust and Tauri v2.
-Since the project is intended to be **extremely minimal**, the focus of this review is on:
-1. **Security** (safeguarding system access when loading remote content).
-2. **Performance & Binary Size Optimization** (maximizing Rust/Tauri efficiency).
-3. **CI/CD Efficiency** (speeding up GitHub Actions run times).
-4. **Native Desktop UX** (making the web app feel like a polished native app).
 
 ---
 
@@ -40,80 +34,8 @@ codegen-units = 1     # Reduce parallel codegen units to maximize LTO optimizati
 panic = "abort"       # Remove panic unwinding overhead
 strip = true          # Strip symbols and debug info automatically
 ```
-* **Impact**: Can reduce the output binary size by **50% to 70%** (saving tens of megabytes on Linux, Windows, and macOS) and improve load-up times.
+* **Impact**: Can reduce the output binary size 
 
 
 ---
-
-## 4. Native Desktop UX & Polish
-
-To elevate the app from "a browser wrapper" to a "native game desktop application," consider these low-code/config tweaks:
-
-### 🎮 Recommendation: Disable Context Menus & DevTools in Production
-By default, users can right-click the game to see a browser context menu, or potentially press `F12` or `Ctrl+Shift+I` to open inspector panels. For a game, this breaks immersion.
-* **Action**: Update `src-tauri/src/lib.rs` to disable the default context menu and developer tools in release builds:
-
-```rust
-#[cfg_attr(mobile, tauri::mobile_entry_point)]
-pub fn run() {
-    let mut builder = tauri::Builder::default();
-
-    // Disable devtools in production release builds
-    #[cfg(not(debug_assertions))]
-    {
-        builder = builder.setup(|app| {
-            use tauri::Manager;
-            if let Some(window) = app.get_webview_window("main") {
-                // Disable right-click context menu via webview configuration
-                // or inline JavaScript evaluation to prevent native menu popups.
-                let _ = window.eval(r#"
-                    document.addEventListener('contextmenu', e => e.preventDefault());
-                "#);
-            }
-            Ok(())
-        });
-    }
-
-    builder
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
-}
-```
-
-### ⌨️ Recommendation: Intercept Standard Reload/Zoom Shortcuts
-Prevent players from accidentally refreshing the game page (via `F5` or `Ctrl+R`) or zooming (via `Ctrl++` / `Ctrl+-`), which might ruin active game sessions.
-* **Action**: Since this is a minimal app, you can easily intercept keyboard events via a minimal custom JavaScript script evaluated inside the webview at startup.
-  ```rust
-  let _ = window.eval(r#"
-      document.addEventListener('keydown', e => {
-          // Disable F5, Ctrl+R, CMD+R, and zoom keys
-          if (
-              e.key === 'F5' ||
-              ((e.ctrlKey || e.metaKey) && e.key === 'r') ||
-              ((e.ctrlKey || e.metaKey) && (e.key === '=' || e.key === '-' || e.key === '0'))
-          ) {
-              e.preventDefault();
-          }
-      });
-  "#);
-  ```
-
-### 💾 Recommendation: Save and Restore Window State (Optional Plugin)
-If a user resizes or moves the window, they expect it to open in the same position next time. Tauri provides an official, minimal, zero-boilerplate plugin for this.
-* **Implementation**:
-  1. Add `tauri-plugin-window-state` to dependencies.
-  2. Register it in `src-tauri/src/lib.rs`:
-     ```rust
-     builder = builder.plugin(tauri_plugin_window_state::Builder::default().build());
-     ```
-  Since this is an optional enhancement, we keep it as a suggestion depending on how "minimal" you want the core codebase dependencies to remain.
-
----
-
-## Summary Checklist for Next Iteration
-
-| Item | Recommendation | Priority | Complexity |
-|---|---|---|---|
-| **Security** | Omit `"remote"` block from default capabilities | **High** | Very Low |
-| **Rust** | Configure size-optimized release profiles in `Cargo.toml` | **High** | Very Low |
 
