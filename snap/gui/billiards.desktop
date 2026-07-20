@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Billiards
+Comment=Desktop wrapper for the billiards web game
+Exec=billiards
+Icon=billiards
+Terminal=false
+Categories=Game;SportsGame;
+StartupWMClass=billiards

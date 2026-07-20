@@ -1,0 +1,69 @@
+name: billiards
+base: core22
+version: '0.1.0'
+summary: Desktop wrapper for the billiards web game
+description: |
+  A minimal Tauri v2 desktop application wrapper that connects to the online
+  multiplayer billiards game located at https://billiards.tailuge.workers.dev/lobby.
+grade: stable
+confinement: strict
+
+layout:
+  /usr/lib/$SNAPCRAFT_ARCH_TRIPLET/webkit2gtk-4.1:
+    bind: $SNAP/usr/lib/$SNAPCRAFT_ARCH_TRIPLET/webkit2gtk-4.1
+
+apps:
+  billiards:
+    command: usr/bin/billiards
+    desktop: usr/share/applications/billiards.desktop
+    extensions: [gnome]
+    plugs:
+      - network
+      - opengl
+      - wayland
+      - x11
+      - audio-playback
+      - desktop
+      - desktop-legacy
+
+parts:
+  build-app:
+    plugin: nil
+    source: .
+    build-snaps:
+      - node/20/stable
+      - rustup/latest/stable
+    build-packages:
+      - libwebkit2gtk-4.1-dev
+      - build-essential
+      - curl
+      - wget
+      - file
+      - libxdo-dev
+      - libssl-dev
+      - libayatana-appindicator3-dev
+      - librsvg2-dev
+      - pkg-config
+      - dpkg
+    stage-packages:
+      - libwebkit2gtk-4.1-0
+      - libayatana-appindicator3-1
+    override-build: |
+      set -eu
+      # If a package.json exists (e.g. if local assets are used in the future), install node dependencies
+      if [ -f "package.json" ]; then
+        npm install
+      fi
+
+      # Compile the application and generate the Debian package bundle using Tauri CLI
+      npx -y @tauri-apps/cli build --bundles deb
+
+      # Extract the generated deb package directly into the snap install directory
+      dpkg -x src-tauri/target/release/bundle/deb/*.deb "$SNAPCRAFT_PART_INSTALL/"
+
+      # Overwrite/install our custom, standardized desktop file
+      mkdir -p "$SNAPCRAFT_PART_INSTALL/usr/share/applications"
+      cp snap/gui/billiards.desktop "$SNAPCRAFT_PART_INSTALL/usr/share/applications/billiards.desktop"
+
+      # Clean up the extracted capital-letter desktop file to prevent duplicates
+      rm -f "$SNAPCRAFT_PART_INSTALL/usr/share/applications/Billiards.desktop"
